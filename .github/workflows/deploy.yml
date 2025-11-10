@@ -40,7 +40,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/pessoa-exercicio-ci:${{ steps.vars.outputs.TAG }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmes-api:${{ steps.vars.outputs.TAG }}
 
       - name: Deploy on EC2 (SSH)
         uses: appleboy/ssh-action@v1.0.3
@@ -52,9 +52,12 @@ jobs:
           script: |
             set -e
             docker network inspect rede >/dev/null 2>&1 || docker network create -d bridge rede
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/projeto-software-exercicio:${{ steps.vars.outputs.TAG }}
-            (docker rm -f pessoas-app || true)
-            docker run -d --name pessoas-app \
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/filmes-api:${{ steps.vars.outputs.TAG }}
+            (docker rm -f filmes-app || true)
+            docker run -d --name filmes-app \
               --network=rede \
               -p 8080:8080 \
-              ${{ secrets.DOCKERHUB_USERNAME }}/projeto-software-exercicio:${{ steps.vars.outputs.TAG }}
+              -e DB_URL=jdbc:mysql://mysql:3306/filmes_db?createDatabaseIfNotExist=true \
+              -e DB_USERNAME=root \
+              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              ${{ secrets.DOCKERHUB_USERNAME }}/filmes-api:${{ steps.vars.outputs.TAG }}
